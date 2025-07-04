@@ -1,6 +1,11 @@
 # mobile_elements
 Nextflow workflow for the detection of mobile elements from NGS data
 
+## Documentation
+--
+
+
+## Installation
 Add the SylabsCloud to the remotes on Apptainer:
 ```
 apptainer remote add --no-login SylabsCloud cloud.sylabs.io
@@ -17,3 +22,5 @@ SCRAMble: library://timniem/misc/scramble
 ```
 apptainer pull --dir 'path/to/cache/dir' container_name.sif library://timniem/container_image_path
 ```
+## Usage
+--

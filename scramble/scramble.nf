@@ -14,11 +14,11 @@ process IdentifyClusters {
     input:
         tuple val(sampleID), path(bamFile), path(baiFile)
     output:
-        tuple val(sampleID), path("${sampleID}.cluster.txt")
+        tuple val(sampleID), path("${sampleID}_clusters.txt")
 
     script:
         """
-        ${CMD_SCRAMBLE} cluster_identifier ${bamFile} > ${sampleID}.cluster.txt
+        ${CMD_SCRAMBLE} cluster_identifier ${bamFile} > ${sampleID}_clusters.txt
         """
 }
 
@@ -32,13 +32,13 @@ process SCRAMble {
     input:
         tuple val(sampleID), path(clusterFile)
     output:
-        path "${sampleID}_scramble_out.tsv"
+        path "${sampleID}_scramble.vcf"
 
     script:
         """
         ls -lh ${clusterFile}
         ${CMD_SCRAMBLE} Rscript --vanilla ${params.scramble.scramble_script} \
-            --out-name ${sampleID}_scramble_out.tsv \
+            --out-name \$PWD/${sampleID}_scramble \
             --cluster-file \$PWD/${clusterFile} \
             --install-dir ${params.scramble.cluster_analysis_bin} \
             --mei-refs ${params.scramble.mei_ref} \

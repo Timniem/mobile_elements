@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 /**
-    BAM to results .tsv workflow
+    SCRAMble processes
 **/
 
 

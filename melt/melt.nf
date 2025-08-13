@@ -17,7 +17,7 @@ process Melt {
         path "${sampleID}_melt.vcf"
 
     script:
-        """
+         """
         ${CMD_MELT} java -Xmx8G -jar ${params.melt.melt_jar} Single \
                     -h ${params.reference_genome} \
                     -bamfile ${bamFile} \
@@ -25,20 +25,33 @@ process Melt {
                     -t ${params.melt.transposon_file_list} \
                     -w \$PWD
 
-        ${CMD_MELT} bash -c 'bcftools view -Oz -o SVA.final_comp.vcf.gz SVA.final_comp.vcf
-                    bcftools view -Oz -o ALU.final_comp.vcf.gz ALU.final_comp.vcf
-                    bcftools view -Oz -o LINE1.final_comp.vcf.gz LINE1.final_comp.vcf
-                    bcftools index SVA.final_comp.vcf.gz
-                    bcftools index ALU.final_comp.vcf.gz
-                    bcftools index LINE1.final_comp.vcf.gz
-                    bcftools concat -a -o ${sampleID}_melt_tmp.vcf SVA.final_comp.vcf.gz ALU.final_comp.vcf.gz LINE1.final_comp.vcf.gz
+        ${CMD_MELT} bash -c '
+        # Initialize array for gzipped VCFs to concat
+        files_to_concat=()
+        
+        for type in SVA ALU LINE1; do
+            vcf="\${type}.final_comp.vcf"
+            if [ -s "\$vcf" ]; then
+                echo "\$vcf is non-empty, compressing and indexing..."
+                bcftools view -Oz -o "\${type}.final_comp.vcf.gz" "\$vcf"
+                bcftools index "\${type}.final_comp.vcf.gz"
+                files_to_concat+=("\${type}.final_comp.vcf.gz")
+            else
+                echo "\$vcf is empty or missing, skipping."
+            fi
+        done
 
-                    # Extract header, remove contig lines, save as new header.
-                    bcftools view -h ${sampleID}_melt_tmp.vcf | grep -v '^##contig' > new_header.txt
-
-                    # Replace header in VCF with this cleaned header and sort variants.
-                    bcftools reheader -h new_header.txt -o ${sampleID}_melt_tmp_nocontig.vcf ${sampleID}_melt_tmp.vcf
-                    bcftools reheader -f ${params.reference_genome}.fai ${sampleID}_melt_tmp_nocontig.vcf > ${sampleID}_melt_tmp_fixheader.vcf
-                    bcftools sort ${sampleID}_melt_tmp_fixheader.vcf -o ${sampleID}_melt.vcf'
+        if [ \${#files_to_concat[@]} -gt 0 ]; then
+            bcftools concat -a -o ${sampleID}_melt_tmp.vcf "\${files_to_concat[@]}"
+            bcftools view -h ${sampleID}_melt_tmp.vcf | grep -v "^##contig" > new_header.txt
+            bcftools reheader -h new_header.txt -o ${sampleID}_melt_tmp_nocontig.vcf ${sampleID}_melt_tmp.vcf
+            bcftools reheader -f ${params.reference_genome}.fai ${sampleID}_melt_tmp_nocontig.vcf > ${sampleID}_melt_tmp_fixheader.vcf
+            # Sort final VCF
+            bcftools sort ${sampleID}_melt_tmp_fixheader.vcf -o ${sampleID}_melt.vcf
+        else
+            echo "No VCF files with variants to concatenate for sample ${sampleID}."
+            touch ${sampleID}_melt.vcf
+        fi
+        '
         """
 }

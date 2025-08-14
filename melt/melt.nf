@@ -5,7 +5,7 @@
 
 
 process Melt {
-    time '1h'
+    time '2h'
     memory '16 GB'
     cpus 1
 
@@ -18,12 +18,22 @@ process Melt {
 
     script:
          """
+        if [${params.genomeBuild} == "hg19"]
+        then
         ${CMD_MELT} java -Xmx8G -jar ${params.melt.melt_jar} Single \
                     -h ${params.reference_genome} \
                     -bamfile ${bamFile} \
-                    -n ${params.melt.genes_bed} \
-                    -t ${params.melt.transposon_file_list} \
+                    -n ${params.melt.genes_bed_hg19} \
+                    -t ${params.melt.transposon_file_list_hg19} \
                     -w \$PWD
+        else
+        ${CMD_MELT} java -Xmx8G -jar ${params.melt.melt_jar} Single \
+                    -h ${params.reference_genome} \
+                    -bamfile ${bamFile} \
+                    -n ${params.melt.genes_bed_hg38} \
+                    -t ${params.melt.transposon_file_list_hg38} \
+                    -w \$PWD
+        fi
 
         ${CMD_MELT} bash -c '
         # Initialize array for gzipped VCFs to concat

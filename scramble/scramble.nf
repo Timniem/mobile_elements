@@ -23,7 +23,7 @@ process IdentifyClusters {
 }
 
 process SCRAMble {
-    time '1h'
+    time '2h'
     memory '16 GB'
     cpus 1
 

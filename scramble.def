@@ -1,0 +1,80 @@
+Bootstrap: docker
+From: ubuntu:20.04
+
+%post
+    export TZ='Europe/Amsterdam'
+    export DEBIAN_FRONTEND=noninteractive
+    
+    apt-get clean all && \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y  \
+        autoconf \
+        autogen \
+        build-essential \
+        curl \
+        libbz2-dev \
+        libcurl4-openssl-dev \
+        libhts3 \
+        libhts-dev \
+        liblzma-dev \
+        libncurses5-dev \
+        libnss-sss \
+        libssl-dev \
+        libxml2-dev \
+        ncbi-blast+ \
+        zlib1g-dev \
+        git
+
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+    # Installing R 4.3
+    sed -i.bak "/^#.*deb-src.*universe$/s/^# //g" /etc/apt/sources.list
+    apt -y update
+    apt -y build-dep r-base
+    export R_VERSION=4.3.1
+    curl -O https://cran.rstudio.com/src/base/R-4/R-${R_VERSION}.tar.gz
+    tar -xzvf R-${R_VERSION}.tar.gz
+    cd R-${R_VERSION}
+    ./configure \
+        --prefix=/opt/R/${R_VERSION} \
+        --enable-R-shlib \
+        --enable-memory-profiling \
+        --with-blas\
+        --with-lapack
+    make
+    make install
+    ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R
+    ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript
+    cd ..
+
+    # Set CRAN mirror in Rprofile
+    echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > /root/.Rprofile
+
+    # Install BiocManager
+    R --slave -e 'if(!require("BiocManager", quietly=TRUE)) install.packages("BiocManager")'
+    R --slave -e 'install.packages(c("optparse", "stringr", "devtools"))'
+    R --slave -e 'devtools::install_github("mhahsler/rBLAST")'
+
+
+    # Install rBLAST from BCmanager
+    R --slave -e 'BiocManager::install(c("Biostrings", "Rsamtools"))'
+    
+    # install scramble
+    cd app
+    git clone https://github.com/GeneDx/scramble.git
+    cd scramble
+    cd cluster_identifier/src
+    make
+    ln -s /app/scramble/cluster_identifier/src/build/cluster_identifier /usr/local/bin/cluster_identifier
+
+%environment
+    export PATH=/usr/local/bin:$PATH
+
+%files
+    . /app
+    . /mnt/source
+
+%labels
+    Author Tim Niemeijer

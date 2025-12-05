@@ -17,16 +17,17 @@ process Melt {
         path "${sampleID}_melt.vcf"
 
     script:
+        def xmxMb = Math.round(task.memory.toMega() * 0.9)
         """
         if [[ "${params.genomeBuild}" == "hg19" ]]; then
-            ${CMD_MELT:-} java -Xmx8G -jar "${params.melt.melt_jar}" Single \
+            ${CMD_MELT:-} java -Xmx${xmxMb}m -jar "${params.melt.melt_jar}" Single \
                 -h "${params.reference_genome}" \
                 -bamfile "${bamFile}" \
                 -n "${params.melt.genes_bed_hg19}" \
                 -t "${params.melt.transposon_file_list_hg19}" \
                 -w "$PWD"
         else
-            ${CMD_MELT:-} java -Xmx8G -jar "${params.melt.melt_jar}" Single \
+            ${CMD_MELT:-} java -Xmx${xmxMb}m -jar "${params.melt.melt_jar}" Single \
                 -h "${params.reference_genome}" \
                 -bamfile "${bamFile}" \
                 -n "${params.melt.genes_bed_hg38}" \

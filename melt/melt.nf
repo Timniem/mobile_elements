@@ -17,22 +17,24 @@ process Melt {
         path "${sampleID}_melt.vcf"
 
     script:
-        def xmxMb = Math.round(task.memory.toMega() * 0.9)
+        def xmxMb = math.round(task.memory.toMega() - 50) // all memory minus 50mb 
         """
         if [[ "${params.genomeBuild}" == "hg19" ]]; then
-            ${CMD_MELT:-} java -Xmx${xmxMb}m -jar "${params.melt.melt_jar}" Single \
+            echo "hg19 as genome build"
+            ${CMD_MELT} java -Xmx${xmxMb}m -jar "${params.melt.melt_jar}" Single \
                 -h "${params.reference_genome}" \
                 -bamfile "${bamFile}" \
                 -n "${params.melt.genes_bed_hg19}" \
                 -t "${params.melt.transposon_file_list_hg19}" \
-                -w "$PWD"
+                -w "\$PWD"
         else
-            ${CMD_MELT:-} java -Xmx${xmxMb}m -jar "${params.melt.melt_jar}" Single \
+            echo "hg38 as genome build"
+            ${CMD_MELT} java -Xmx${xmxMb}m -jar "${params.melt.melt_jar}" Single \
                 -h "${params.reference_genome}" \
                 -bamfile "${bamFile}" \
                 -n "${params.melt.genes_bed_hg38}" \
                 -t "${params.melt.transposon_file_list_hg38}" \
-                -w "$PWD"
+                -w "\$PWD"
         fi
         ${CMD_MELT} bash -c '
         # Initialize array for gzipped VCFs to concat

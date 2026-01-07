@@ -17,7 +17,7 @@ process Melt {
         path "${sampleID}_melt.vcf"
 
     script:
-        def xmxMb = math.round(task.memory.toMega() - 50) // all memory minus 50mb 
+        def xmxMb = task.memory.toMega() - 50 // all memory minus 50mb 
         """
         if [[ "${params.genomeBuild}" == "hg19" ]]; then
             echo "hg19 as genome build"
